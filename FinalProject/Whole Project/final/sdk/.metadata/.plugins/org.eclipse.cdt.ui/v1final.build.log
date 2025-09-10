@@ -1,0 +1,50 @@
+14:36:15 **** Incremental Build of configuration Debug for project v1final ****
+make all 
+'Building file: ../src/lw_usb_main.c'
+'Invoking: MicroBlaze gcc compiler'
+mb-gcc -Wall -O0 -g3 -c -fmessage-length=0 -MT"src/lw_usb_main.o" -IC:/Users/lukej/ECE_385/Final_Project/final/sdk/mb_usb_hdmi_top/export/mb_usb_hdmi_top/sw/mb_usb_hdmi_top/standalone_microblaze_0/bspinclude/include -mno-xl-reorder -mlittle-endian -mxl-barrel-shift -mxl-pattern-compare -mcpu=v11.0 -mno-xl-soft-mul -Wl,--no-relax -ffunction-sections -fdata-sections -MMD -MP -MF"src/lw_usb_main.d" -MT"src/lw_usb_main.o" -o "src/lw_usb_main.o" "../src/lw_usb_main.c"
+../src/lw_usb_main.c: In function 'main':
+../src/lw_usb_main.c:695:9: warning: implicit declaration of function 'sleep' [-Wimplicit-function-declaration]
+  695 |         sleep(7);
+      |         ^~~~~
+../src/lw_usb_main.c:711:41: warning: implicit declaration of function 'usleep' [-Wimplicit-function-declaration]
+  711 |                                         usleep(5000);
+      |                                         ^~~~~~
+../src/lw_usb_main.c:777:41: warning: implicit declaration of function 'drawPixel' [-Wimplicit-function-declaration]
+  777 |                                         drawPixel(x, y, 1);
+      |                                         ^~~~~~~~~
+../src/lw_usb_main.c:806:113: warning: implicit declaration of function 'removeNote'; did you mean 'remove'? [-Wimplicit-function-declaration]
+  806 |                                                                                                                 removeNote(chart[i].lane, drawY);
+      |                                                                                                                 ^~~~~~~~~~
+      |                                                                                                                 remove
+../src/lw_usb_main.c:837:49: warning: implicit declaration of function 'clickedFunc' [-Wimplicit-function-declaration]
+  837 |                                                 clickedFunc(kbdbuf.keycode, prev_lane_pressed, clicked);
+      |                                                 ^~~~~~~~~~~
+../src/lw_usb_main.c:854:65: warning: implicit declaration of function 'drawNote' [-Wimplicit-function-declaration]
+  854 |                                                                 drawNote(chart[i].lane, drawY);
+      |                                                                 ^~~~~~~~
+../src/lw_usb_main.c:857:89: warning: implicit declaration of function 'scoreCalc' [-Wimplicit-function-declaration]
+  857 |                                                                                 score = scoreCalc(ybot, 449, chart[i].lane);
+      |                                                                                         ^~~~~~~~~
+../src/lw_usb_main.c:879:49: warning: implicit declaration of function 'lightKeys' [-Wimplicit-function-declaration]
+  879 |                                                 lightKeys(kbdbuf.keycode, score);
+      |                                                 ^~~~~~~~~
+../src/lw_usb_main.c:747:25: warning: unused variable 'should_poll' [-Wunused-variable]
+  747 |                 uint8_t should_poll = 0;
+      |                         ^~~~~~~~~~~
+'Finished building: ../src/lw_usb_main.c'
+' '
+'Building target: v1final.elf'
+'Invoking: MicroBlaze gcc linker'
+mb-gcc -Wl,-T -Wl,../src/lscript.ld -LC:/Users/lukej/ECE_385/Final_Project/final/sdk/mb_usb_hdmi_top/export/mb_usb_hdmi_top/sw/mb_usb_hdmi_top/standalone_microblaze_0/bsplib/lib -mlittle-endian -mxl-barrel-shift -mxl-pattern-compare -mcpu=v11.0 -mno-xl-soft-mul -Wl,--no-relax -Wl,--gc-sections -o "v1final.elf"  ./src/lw_usb/HID.o ./src/lw_usb/MAX3421E.o ./src/lw_usb/transfer.o  ./src/hdmi_text_controller.o ./src/lw_usb_main.o ./src/platform.o   -Wl,--start-group,-lxil,-lgcc,-lc,--end-group
+'Finished building target: v1final.elf'
+' '
+'Invoking: MicroBlaze Print Size'
+mb-size v1final.elf  |tee "v1final.elf.size"
+   text	   data	    bss	    dec	    hex	filename
+  31132	   6000	   8252	  45384	   b148	v1final.elf
+'Finished building: v1final.elf.size'
+' '
+
+14:36:16 Build Finished (took 981ms)
+

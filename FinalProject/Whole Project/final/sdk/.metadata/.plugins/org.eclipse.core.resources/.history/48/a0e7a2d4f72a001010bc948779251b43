@@ -1,0 +1,212 @@
+
+
+/***************************** Include Files *******************************/
+#include "hdmi_text_controller.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "sleep.h"
+
+#include <xtmrctr.h>
+#include "xintc.h"
+/************************** Function Definitions ***************************/
+
+void textHDMIColorClr()
+{
+	for (int i = 0; i<(ROWS*COLUMNS); i++)
+	{
+		hdmi_ctrl->VRAM[i] = 0x00;
+	}
+}
+
+void drawPixel(int x, int y, uint8_t color)
+{
+
+	int index = (y*COLUMNS + x)/2;
+	uint8_t current = hdmi_ctrl->VRAM[index];
+	uint8_t shifted = current;
+	if((y*COLUMNS + x)%2 == 0) {
+		if((current & 0x0F) == color) {
+			return;
+		}
+		hdmi_ctrl->VRAM[index] = (current & 0xF0) | (color);
+	}	else {
+		if(((shifted & 0xF0) >> 4)==color) {
+			return;
+		}
+		hdmi_ctrl->VRAM[index] = (current & 0x0F) | (color << 4);
+	}	
+}
+
+uint8_t readPixel(int x, int y) {
+	int index = (y*COLUMNS + x)/2;
+	if((y*COLUMNS + x)%2 == 0) {
+		return hdmi_ctrl->VRAM[index] & 0x0F;
+	}	else {
+		return ((hdmi_ctrl->VRAM[index] & 0xF0) >> 4);
+	}
+}
+
+void drawNote(int lane, int y) {
+    uint8_t color;
+    int curr_y;
+    if(y-5<0) {
+        curr_y = 0;
+    } else {
+        curr_y = y-5;
+    }
+    for(; (curr_y < y+30) && (curr_y<480) ; curr_y++) {
+        if(curr_y<0) {
+            continue;
+        }
+        if(curr_y<y) {
+            color = 0;
+        } else {
+            if(lane==0 || lane == 3) {
+                    color = white;
+            } else {
+                color = cyan;
+            }
+        }
+        uint8_t row_color = readPixel(lane*49+2,curr_y);
+        if(row_color == color || row_color == red || row_color == orange || row_color == yellow || row_color == green) {
+            continue;
+        }
+        for(int x=lane*49+2; x < lane*49+49+2; x++) {
+            drawPixel(x,curr_y,color);
+        }
+    }
+}
+
+void removeNote(int lane, int y) {
+    uint8_t color;
+    int curr_y;
+    if(y-5<0) {
+        curr_y = 0;
+    } else {
+        curr_y = y-5;
+    }
+    for(; (curr_y < y+30) && (curr_y<480) ; curr_y++) {
+        if(curr_y<0) {
+            continue;
+        }
+        color = 0;
+        uint8_t row_color = readPixel(lane*49+2,curr_y);
+        if(row_color == color || row_color == red || row_color == orange || row_color == yellow || row_color == green) {
+            continue;
+        }
+        for(int x=lane*49+2; x < lane*49+49+2; x++) {
+            drawPixel(x,curr_y,color);
+        }
+    }
+}
+
+int scoreCalc(int hitY, int expY, int lane){
+//	xil_printf("Hit Y: %d\n", hitY);
+//	xil_printf("Exp Y: %d\n", expY);
+	int score = 0;
+    int diff = abs(hitY - expY);
+//    xil_printf("ABS: %d\n", diff);
+    if (diff < 8)
+    	score = 100;
+    else if (diff < 20)
+    	score = 50;
+    else if (diff < 30)
+        score = 20;
+    else
+        score = 0;
+
+    return score;
+}
+
+void clickedFunc(uint8_t keycode[4], uint8_t prev_lane_pressed[4], uint8_t clicked[4])
+{
+    for (int i = 0; i < 4; i++) {
+    	clicked[i] = 0;
+    }
+    uint8_t lane_pressed[4] = {0};
+    for (int i = 0; i < 4; i++) {
+        switch (keycode[i]) {
+            case 0x07: lane_pressed[0] = 1; break; // 'd'
+            case 0x09: lane_pressed[1] = 1; break; // 'f'
+            case 0x0D: lane_pressed[2] = 1; break; // 'j'
+            case 0x0E: lane_pressed[3] = 1; break; // 'k'
+            default: break;
+        }
+    }
+
+
+    for (int lane = 0; lane < 4; lane++) {
+        if (!prev_lane_pressed[lane] && lane_pressed[lane]) {
+            clicked[lane] = 1;
+        } else {
+        	clicked[lane] = 2;
+        }
+        prev_lane_pressed[lane] = lane_pressed[lane];
+    }
+}
+
+int isPressed(uint8_t *prev, uint8_t *curr)
+{
+    for(int i = 0; i < 6; i++) {
+        if(curr[i] != 0 && curr[i] == prev[i]) return 1; // still held
+    }
+    return 0; // all keys released
+}
+
+void lightKeys(uint8_t keycode[4], uint8_t score)
+{
+	int color = red;
+    for (int x = 0; x < COLUMNS; x++) {
+        for (int y = ROWS - 33; y < ROWS - 29; y++) {
+            drawPixel(x, y, 1);
+        }
+    }
+
+    if (score == 100){
+    	color = green;
+    } else if (score == 50){
+    	color = yellow;
+    } else if (score == 20){
+    	color = orange;
+    } else {
+    	color = red;
+    }
+
+
+    for (int i = 0; i < 4; i++) {
+        switch (keycode[i]) {
+            case 0x07: // 'd'
+                for (int x = 24 - 3; x < 24 + 3; x++) {
+                    for (int y = ROWS - 33; y < ROWS - 29; y++) {
+                        drawPixel(x, y, color);
+                    }
+                }
+                break;
+            case 0x09: // 'f'
+                for (int x = 74 - 3; x < 74 + 3; x++) {
+                    for (int y = ROWS - 33; y < ROWS - 29; y++) {
+                        drawPixel(x, y, color);
+                    }
+                }
+                break;
+            case 0x0D: // 'j'
+                for (int x = 124 - 3; x < 124 + 3; x++) {
+                    for (int y = ROWS - 33; y < ROWS - 29; y++) {
+                        drawPixel(x, y, color);
+                    }
+                }
+                break;
+            case 0x0E: // 'k'
+                for (int x = 174 - 3; x < 174 + 3; x++) {
+                    for (int y = ROWS - 33; y < ROWS - 29; y++) {
+                        drawPixel(x, y, color);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+

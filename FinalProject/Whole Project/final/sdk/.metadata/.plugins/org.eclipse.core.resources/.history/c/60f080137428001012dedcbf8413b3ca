@@ -1,0 +1,258 @@
+
+
+/***************************** Include Files *******************************/
+#include "hdmi_text_controller.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "sleep.h"
+
+#include <xtmrctr.h>
+#include "xintc.h"
+/************************** Function Definitions ***************************/
+XTmrCtr Usb_timer2;
+static int Status;
+
+void textHDMIColorClr()
+{
+	for (int i = 0; i<(ROWS*COLUMNS); i++)
+	{
+		hdmi_ctrl->VRAM[i] = 0x00;
+	}
+}
+
+
+void timer() {
+	//start USB timer
+	Status = XTmrCtr_Initialize(&Usb_timer2, XPAR_TIMER_USB_AXI_DEVICE_ID);
+	if (Status != XST_SUCCESS) {
+			xil_printf ("Timer instantiation failed\n");
+	}
+	XTmrCtr_Start(&Usb_timer2, 0);
+
+	xil_printf ("The following should be about 1 second ticks. If they are not, check your timer \n");
+	//Test timer to make sure it is plausible
+	for (int i = 0; i < 3; i++)
+	{
+		u32 current = XTmrCtr_GetValue(&Usb_timer2, 0);
+		while (XTmrCtr_GetValue(&Usb_timer2, 0) - current < 100000000)
+		{
+
+		}
+		xil_printf (".tick.\n");
+	}
+}
+
+void drawPixel(int x, int y, uint8_t color)
+{
+
+	int index = (y*COLUMNS + x)/2;
+	uint8_t current = hdmi_ctrl->VRAM[index];
+	uint8_t shifted = current;
+	if((y*COLUMNS + x)%2 == 0) {
+		if(current & 0x0F == color) {
+			return;
+		}
+		hdmi_ctrl->VRAM[index] = (current & 0xF0) | (color);
+	}	else {
+		if(((shifted & 0xF0) >> 4)==color) {
+			return;
+		}
+		hdmi_ctrl->VRAM[index] = (current & 0x0F) | (color << 4);
+	}
+		
+}
+
+uint8_t readPixel(int x, int y) {
+	int index = (y*COLUMNS + x)/2;
+	if((y*COLUMNS + x)%2 == 0) {
+		return hdmi_ctrl->VRAM[index] & 0x0F;
+	}	else {
+		return ((hdmi_ctrl->VRAM[index] & 0xF0) >> 4);
+	}
+}
+
+// void drawNote(int lane, int dist_from_line, int color) {
+// 	int x_c = lane*50 + 24;
+// 	int y_c = 430-dist_from_line;
+
+// 	int radius = 12;
+// 	for(int x =-25; x < 25; x++) {
+// 		for(int y = -40; y < 40; y++) {
+// 			if(y+y_c<0 || y+y_c>479 ) {
+// 				continue;
+// 			}
+	
+// 			if(x*x/3 + (y*y)/5 < radius*radius) {
+// 				drawPixel(x+x_c, y+y_c, color);
+// 			}
+// 		}
+// 	}
+// }
+
+void drawNote(int lane, int y, int color) {
+	int x_c = lane*50 + 24;
+	int y_c = y;
+	int radius = 12;
+	u32 time = XTmrCtr_GetValue(&Usb_timer2, 0);
+	xil_printf(time);
+	for(int x =-25; x < 25; x++) {
+		for(int y = -40; y < 40; y++) {
+			if(y+y_c<0 || y+y_c>479 ) {
+				continue;
+			}
+			if (readPixel(x+x_c, y+y_c) == 1){
+				continue;
+			} else if(x*x/3 + (y*y)/5 < radius*radius) {
+				drawPixel(x+x_c, y+y_c, color);
+			} else {
+				drawPixel(x+x_c, y+y_c, 0);
+			}
+		}
+	}
+	
+}
+
+void scroll() {
+	for(int y = ROWS-1; y>=5; y--) {
+		for(int x = 0; x<COLUMNS; x++) {
+			uint8_t color = readPixel(x,y-5);
+			uint8_t curr_color = readPixel(x,y);
+			if(color == 1) {
+				continue;
+			}
+			drawPixel(x,y,color);
+		}
+	}
+}
+
+void drawHollow(int lane, int dist_from_line, int color) {
+	int x_c = lane*50 + 24;
+	int y_c = 430-dist_from_line;
+	int radius = 12;
+	int inner = 11;
+	for(int x =-25; x < 25; x++) {
+		for(int y = -40; y < 40; y++) {
+			if(y+y_c<0 || y+y_c>479 ) {
+				continue;
+			}
+	
+			if((x*x)/3 + (y*y)/5 <= radius*radius && x*x/3 + (y*y)/5 >= inner*inner) {
+				drawPixel(x+x_c, y+y_c, color);
+			}
+		}
+	}
+}
+
+// void drawLong(int lane, int dist_from_line, int color) {
+// 	int x_c = lane*50 + 24;
+// 	int y_c = 430-dist_from_line;
+// 	int radius = 12;
+// 	for(int x =-25; x < 25; x++) {
+// 		for(int y = -40; y < 40; y++) {
+// 			if(y+y_c<0 || y+y_c>479 ) {
+// 				continue;
+// 			}
+	
+// 			if(x*x/3 + (y*y)/5 < radius*radius) {
+// 				drawPixel(x+x_c, y+y_c, color);
+// 			}
+// 		}
+// 	}
+// }
+
+void textHDMIColorScreenSaver()
+{
+//	char color_string[80];
+    int x, y;
+	uint8_t color;
+	textHDMIColorClr();
+	
+	drawHollow(0,0,1);
+	drawHollow(1,0,1);
+	drawHollow(2,0,1);
+	drawHollow(3,0,1);
+	
+	for(int i = 0; i < 10000; i+=5){
+		drawNote(1, -2 + i, 6);
+		drawNote(2, -33 + i, 6);
+		drawNote(1, -74 + i, 6);
+		drawNote(3, -120 + i, 5);
+		drawNote(0, -204 + i, 5);
+	}
+
+	// drawHollow(0,0,3);
+	// drawHollow(1,0,3);
+	// drawHollow(2,0,3);
+	// drawHollow(3,0,3);
+
+
+	// drawNote(0,200,1);
+	// drawNote(0,201,2);
+	// drawNote(1,201,1);
+	// drawNote(1,200,2);
+	// drawNote(2,200,1);
+	// drawNote(0,400,1);
+	// drawNote(1,350,1);
+	// drawNote(2,300,1);
+	// while(1) {
+	// 	scroll();
+	// 	drawHollow(0,0,3);
+	// drawHollow(1,0,3);
+	// drawHollow(2,0,3);
+	// drawHollow(3,0,3);
+	// }
+
+
+// for(int i=450; i>0; i--) {
+// 	drawNote(0,i,0);
+// 	drawNote(0,i-1,2);
+// 	usleep(10000);
+// }
+//for(y=0; y<ROWS; y++) {
+//		for(x=0; x<COLUMNS; x++) {
+//			color = ((x+y)/15)%5+2;
+//			drawPixel(x,y,color);
+//		}
+//	}
+		
+}
+
+//Call this function for your Week 2 test
+hdmiTestWeek2()
+{
+    //On-chip memory write and readback test
+	uint32_t checksum[ROWS], readsum[ROWS];
+	timer();
+	xil_printf("test 2");
+
+//	for (int j = 0; j < ROWS; j++)
+//	{
+//		checksum[j] = 0;
+//		for (int i = 0; i < COLUMNS * 2; i++)
+//		{
+//			hdmi_ctrl->VRAM[j*COLUMNS*2 + i] = i + j;
+//			checksum[j] += i + j;
+//		}
+//	}
+//
+//	for (int j = 0; j < ROWS; j++)
+//	{
+//		readsum[j] = 0;
+//		for (int i = 0; i < COLUMNS * 2; i++)
+//		{
+//			readsum[j] += hdmi_ctrl->VRAM[j*COLUMNS*2 + i];
+//			xil_printf ("%x \n\r", hdmi_ctrl->VRAM[j*COLUMNS*2 + i]);
+//		}
+//		xil_printf ("Row: %d, Checksum: %x, Read-back Checksum: %x\n\r", j, checksum[j], readsum[j]);
+//		if (checksum[j] != readsum[j])
+//		{
+//			xil_printf ("Checksum mismatch!, check your AXI4 code or your on-chip memory\n\r");
+//			while (1){};
+//		}
+//	}
+//	xil_printf ("Checksum passed, beginning palette test\n\r");
+	textHDMIColorClr();
+    textHDMIColorScreenSaver();
+}
+
