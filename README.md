@@ -2,7 +2,7 @@
 
 Binary Beats is an FPGA based rhythm game featuring a title screen, audio, notes, accuracy indicator, score, highscore, and reset system.
 
-<img width="1042" height="1778" alt="image" src="https://github.com/user-attachments/assets/0a59c9a2-4510-4a2a-b0df-ace91586a352" />
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/0a59c9a2-4510-4a2a-b0df-ace91586a352" />
 
 
 ### How to play
