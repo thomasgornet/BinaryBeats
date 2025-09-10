@@ -2,6 +2,9 @@
 
 Binary Beats is an FPGA based rhythm game featuring a title screen, audio, notes, accuracy indicator, score, highscore, and reset system.
 
+<img width="1042" height="1778" alt="image" src="https://github.com/user-attachments/assets/0a59c9a2-4510-4a2a-b0df-ace91586a352" />
+
+
 ### How to play
 
 To play the game, press enter on the title screen to begin the game, and again at any point during the game to restart. Use keys "d, f, j, and k" to hit notes in lanes "1, 2, 3, and 4" respectively when the bottom the note reaches the horizontal line at the bottom of the screen. If the notes are seem to be out of time with the audio, press "+" to delay the notes, "-" to speed up the notes, and "0" to reset the offset. The current score and all time high score are displayed at the top right of the screen.
